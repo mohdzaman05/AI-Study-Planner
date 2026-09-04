@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Countdown & Management - AI Study Planner</title>
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Upcoming Exams</h1>
+                <p class="page-subtitle">Track test deadlines, revision topics, and real-time days remaining countdowns.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="openAddExamBtn">
+                ➕ Add Exam
+            </button>
+        </div>
+
+        <div id="examsGrid" class="grid-2">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
+                <div class="spinner spinner-primary" style="margin-bottom: 0.75rem;"></div>
+                <div>Loading your exams...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add / Edit Exam Modal -->
+    <div class="modal-overlay" id="examModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="card-title" id="examModalTitle">Schedule Exam</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('examModal')">✕</button>
+            </div>
+            <form id="examForm">
+                <input type="hidden" id="editExamId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="examSubjectSelect">Subject *</label>
+                        <select id="examSubjectSelect" class="form-control" required>
+                            <option value="">Select subject</option>
+                        </select>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="examDate">Exam Date *</label>
+                            <input type="date" id="examDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="examTime">Exam Time (Optional)</label>
+                            <input type="time" id="examTime" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="examImportantTopics">High-Yield Topics / Focus Areas</label>
+                        <textarea id="examImportantTopics" class="form-control" placeholder="e.g. Binary trees, 3NF Normalization, Virtual Memory..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="examNotes">Exam Day Notes / Logistics</label>
+                        <textarea id="examNotes" class="form-control" placeholder="e.g. Room 402, bring graphing calculator, open-book..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('examModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="submitExamBtn">Save Exam</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteExamModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="card-title">Delete Exam</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('deleteExamModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove this exam from your planner?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('deleteExamModal')">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteExamBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            auth.guard(true);
+            ui.renderNavbar('dashboard');
+            ui.renderFooter();
+
+            let examsList = [];
+            let subjects = [];
+            let examToDeleteId = null;
+
+            await loadSubjects();
+            await loadExams();
+
+            document.getElementById('openAddExamBtn').addEventListener('click', () => {
+                document.getElementById('examModalTitle').textContent = 'Schedule Exam';
+                document.getElementById('editExamId').value = '';
+                document.getElementById('examForm').reset();
+                ui.openModal('examModal');
+            });
+
+            document.getElementById('examForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('editExamId').value;
+                const subjectId = document.getElementById('examSubjectSelect').value;
+                const examDate = document.getElementById('examDate').value;
+                const examTime = document.getElementById('examTime').value || null;
+                const importantTopics = document.getElementById('examImportantTopics').value.trim();
+                const notes = document.getElementById('examNotes').value.trim();
+
+                const submitBtn = document.getElementById('submitExamBtn');
+                submitBtn.disabled = true;
+
+                try {
+                    if (id) {
+                        await api.put(`/exams/${id}`, { subjectId, examDate, examTime, importantTopics, notes });
+                        ui.showToast('Exam schedule updated!', 'success');
+                    } else {
+                        await api.post('/exams', { subjectId, examDate, examTime, importantTopics, notes });
+                        ui.showToast('Exam scheduled successfully!', 'success');
+                    }
+                    ui.closeModal('examModal');
+                    await loadExams();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to save exam', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            });
+
+            document.getElementById('confirmDeleteExamBtn').addEventListener('click', async () => {
+                if (!examToDeleteId) return;
+                try {
+                    await api.delete(`/exams/${examToDeleteId}`);
+                    ui.showToast('Exam removed from tracking.', 'info');
+                    ui.closeModal('deleteExamModal');
+                    examToDeleteId = null;
+                    await loadExams();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to delete exam', 'error');
+                }
+            });
+
+            async function loadSubjects() {
+                try {
+                    subjects = await api.get('/subjects');
+                    const select = document.getElementById('examSubjectSelect');
+                    if (subjects.length === 0) {
+                        select.innerHTML = '<option value="">No subjects found. Please add a subject first.</option>';
+                    } else {
+                        select.innerHTML = '<option value="">Select subject</option>' +
+                            subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                    }
+                } catch (err) {
+                    ui.showToast('Error loading subjects', 'error');
+                }
+            }
+
+            async function loadExams() {
+                const container = document.getElementById('examsGrid');
+                try {
+                    examsList = await api.get('/exams');
+
+                    if (examsList.length === 0) {
+                        container.innerHTML = `
+                            <div style="grid-column: 1 / -1;">
+                                <div class="empty-state">
+                                    <span class="empty-state-icon">🎯</span>
+                                    <h2 class="empty-state-title">No upcoming exams tracked</h2>
+                                    <p class="empty-state-desc">Add your midterm and final exam dates to allow the AI to construct urgent revision roadmaps.</p>
+                                    <button class="btn btn-primary" onclick="document.getElementById('openAddExamBtn').click()">Add First Exam</button>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = examsList.map(exam => {
+                        const days = exam.daysRemaining;
+                        let badgeClass = 'badge-primary';
+                        let countdownText = `${days} Days Remaining`;
+
+                        if (days < 0) {
+                            badgeClass = 'badge-subtle';
+                            countdownText = `Completed (${Math.abs(days)}d ago)`;
+                        } else if (days === 0) {
+                            badgeClass = 'badge-danger';
+                            countdownText = `🚨 EXAM TODAY!`;
+                        } else if (days <= 5) {
+                            badgeClass = 'badge-danger';
+                            countdownText = `🚨 Only ${days} Days Left!`;
+                        } else if (days <= 14) {
+                            badgeClass = 'badge-warning';
+                            countdownText = `⚠️ ${days} Days Remaining`;
+                        }
+
+                        return `
+                            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-left: 4px solid ${days <= 5 ? 'var(--danger)' : (days <= 14 ? 'var(--warning)' : 'var(--primary)')};">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.5rem;">
+                                        <h3 style="font-size: 1.2rem; font-weight: 800;">${exam.subjectName}</h3>
+                                        <span class="badge ${badgeClass}">${countdownText}</span>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                                        <span>📅 ${ui.formatDate(exam.examDate)}</span>
+                                        ${exam.examTime ? `<span>⏰ ${exam.examTime}</span>` : ''}
+                                    </div>
+
+                                    ${exam.importantTopics ? `
+                                        <div style="background: var(--bg-subtle); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 0.85rem; font-size: 0.8125rem;">
+                                            <div style="font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">📌 High-Yield Topics:</div>
+                                            <div style="color: var(--text-muted); line-height: 1.4;">${exam.importantTopics}</div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${exam.notes ? `
+                                        <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1rem;">
+                                            📝 <em>${exam.notes}</em>
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border-subtle); padding-top: 0.85rem;">
+                                    <a href="/study-plan.html" class="btn btn-primary btn-sm" style="flex: 1;">
+                                        Plan Revision &rarr;
+                                    </a>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="editExam(${exam.id})" title="Edit Exam">
+                                        ✏️
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="promptDeleteExam(${exam.id})" title="Delete Exam" style="color: var(--danger);">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                } catch (err) {
+                    container.innerHTML = `<div style="grid-column: 1 / -1; color: var(--danger); text-align: center;">Failed to load exams: ${err.message}</div>`;
+                }
+            }
+
+            window.editExam = function(examId) {
+                const exam = examsList.find(e => e.id === examId);
+                if (!exam) return;
+
+                document.getElementById('examModalTitle').textContent = 'Edit Exam';
+                document.getElementById('editExamId').value = exam.id;
+                document.getElementById('examSubjectSelect').value = exam.subjectId;
+                document.getElementById('examDate').value = exam.examDate;
+                document.getElementById('examTime').value = exam.examTime || '';
+                document.getElementById('examImportantTopics').value = exam.importantTopics || '';
+                document.getElementById('examNotes').value = exam.notes || '';
+
+                ui.openModal('examModal');
+            };
+
+            window.promptDeleteExam = function(examId) {
+                examToDeleteId = examId;
+                ui.openModal('deleteExamModal');
+            };
+        });
+    </script>
+</body>
+</html>

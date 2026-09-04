@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Assistant - AI Study Planner</title>
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container" style="max-width: 900px;">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">AI Study Assistant</h1>
+                <p class="page-subtitle">Your personal academic coach for conceptual explanations, exam preparation, and study strategies.</p>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <!-- Chat Header -->
+            <div style="padding: 1rem 1.5rem; background: var(--bg-subtle); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                    <span style="font-size: 1.5rem;">🤖</span>
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.9375rem;">Study Coach & Tutor</div>
+                        <div style="font-size: 0.75rem; color: var(--success-text); display: flex; align-items: center; gap: 0.35rem;">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
+                            Online & ready to assist
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" id="clearChatBtn" style="font-size: 0.75rem;">
+                    Clear Chat
+                </button>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-bubble chat-ai">
+                    <p>Hello! I'm your <strong>AI Study Assistant</strong>. 🎓</p>
+                    <p style="margin-top: 0.5rem;">
+                        I can help you understand tough programming and computer science concepts, advise you on what topics to prioritize before an exam, or share evidence-based study techniques like Active Recall and Pomodoro.
+                    </p>
+                    <p style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8125rem;">
+                        Click one of the suggested prompts below or type your own question to begin!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Suggested Quick Prompts -->
+            <div class="prompt-pills">
+                <button type="button" class="pill-btn" onclick="sendQuickPrompt('Explain linked lists simply.')">
+                    💡 Explain linked lists simply
+                </button>
+                <button type="button" class="pill-btn" onclick="sendQuickPrompt('I have 3 days left for my exam. What should I prioritize?')">
+                    ⏳ 3 days left: What should I prioritize?
+                </button>
+                <button type="button" class="pill-btn" onclick="sendQuickPrompt('Give me evidence-based revision tips.')">
+                    📚 Revision tips
+                </button>
+                <button type="button" class="pill-btn" onclick="sendQuickPrompt('Explain Core Java OOP Principles with examples.')">
+                    ☕ Java OOP Principles
+                </button>
+            </div>
+
+            <!-- Input Area -->
+            <form id="chatForm" class="chat-input-area">
+                <input type="text" id="chatInput" class="form-control" placeholder="Ask a conceptual question, exam strategy, or study advice..." autocomplete="off" required>
+                <button type="submit" id="sendBtn" class="btn btn-primary" style="min-width: 100px;">
+                    <span id="sendBtnText">Send</span>
+                    <span id="sendSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            auth.guard(true);
+            ui.renderNavbar('ai-assistant');
+            ui.renderFooter();
+
+            const chatMessages = document.getElementById('chatMessages');
+            const chatForm = document.getElementById('chatForm');
+            const chatInput = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const sendBtnText = document.getElementById('sendBtnText');
+            const sendSpinner = document.getElementById('sendSpinner');
+
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const text = chatInput.value.trim();
+                if (!text) return;
+
+                chatInput.value = '';
+                await handleSendMessage(text);
+            });
+
+            document.getElementById('clearChatBtn').addEventListener('click', () => {
+                chatMessages.innerHTML = `
+                    <div class="chat-bubble chat-ai">
+                        <p>Chat cleared. Ask me any study question whenever you are ready! 🚀</p>
+                    </div>
+                `;
+            });
+
+            window.sendQuickPrompt = async function(promptText) {
+                await handleSendMessage(promptText);
+            };
+
+            async function handleSendMessage(message) {
+                // Append user message
+                appendMessage(message, 'user');
+
+                // Loading indicator in AI bubble
+                sendBtn.disabled = true;
+                sendBtnText.style.display = 'none';
+                sendSpinner.style.display = 'inline-block';
+
+                const loadingId = 'ai-loading-' + Date.now();
+                const loadingBubble = document.createElement('div');
+                loadingBubble.id = loadingId;
+                loadingBubble.className = 'chat-bubble chat-ai';
+                loadingBubble.innerHTML = `<span class="spinner spinner-primary" style="width: 16px; height: 16px; margin-right: 0.5rem;"></span> Thinking & synthesizing answer...`;
+                chatMessages.appendChild(loadingBubble);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                try {
+                    const response = await api.post('/ai/chat', { message });
+                    document.getElementById(loadingId)?.remove();
+                    appendMessage(response.reply, 'ai');
+                } catch (err) {
+                    document.getElementById(loadingId)?.remove();
+                    appendMessage(`⚠️ Sorry, I encountered an error: ${err.message || 'Please try again.'}`, 'ai');
+                } finally {
+                    sendBtn.disabled = false;
+                    sendBtnText.style.display = 'inline-block';
+                    sendSpinner.style.display = 'none';
+                    chatInput.focus();
+                }
+            }
+
+            function appendMessage(text, sender) {
+                const bubble = document.createElement('div');
+                bubble.className = `chat-bubble chat-${sender}`;
+
+                if (sender === 'user') {
+                    bubble.textContent = text;
+                } else {
+                    bubble.innerHTML = renderMarkdown(text);
+                }
+
+                chatMessages.appendChild(bubble);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function renderMarkdown(md) {
+                if (!md) return '';
+                // Simple fast markdown formatter for headings, bold, lists, code
+                let html = md
+                    .replace(/^### (.*$)/gim, '<h4>$1</h4>')
+                    .replace(/^## (.*$)/gim, '<h3>$1</h3>')
+                    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                    .replace(/`([^`]+)`/gim, '<code style="background: rgba(0,0,0,0.06); padding: 0.15rem 0.35rem; border-radius: 4px; font-family: monospace;">$1</code>')
+                    .replace(/^\- (.*$)/gim, '<li>$1</li>')
+                    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                    .replace(/\n\n/g, '<p></p>')
+                    .replace(/\n/g, '<br>');
+                return html;
+            }
+        });
+    </script>
+</body>
+</html>

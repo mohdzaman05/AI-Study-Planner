@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Plan History - AI Study Planner</title>
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Study Plan History</h1>
+                <p class="page-subtitle">Archive of past AI-generated study timetables and execution records.</p>
+            </div>
+            <a href="/study-plan.html" class="btn btn-primary btn-sm">
+                &larr; Back to Current Plan
+            </a>
+        </div>
+
+        <div id="plansListContainer" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div class="card" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                <div class="spinner spinner-primary" style="margin-bottom: 0.75rem;"></div>
+                <div>Loading plan history...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Historical Plan Inspection Modal -->
+    <div class="modal-overlay" id="inspectPlanModal">
+        <div class="modal-content" style="max-width: 680px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="card-title" id="inspectTitle">Plan Details</h3>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="inspectDates"></div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('inspectPlanModal')">✕</button>
+            </div>
+            <div class="modal-body" style="max-height: 60vh;">
+                <div id="inspectTasksList" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                    <!-- Historical tasks -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('inspectPlanModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            auth.guard(true);
+            ui.renderNavbar('study-plan');
+            ui.renderFooter();
+
+            let plans = [];
+
+            await loadHistory();
+
+            async function loadHistory() {
+                const container = document.getElementById('plansListContainer');
+                try {
+                    plans = await api.get('/study-plans');
+
+                    if (plans.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <span class="empty-state-icon">📜</span>
+                                <h2 class="empty-state-title">No study plans recorded yet</h2>
+                                <p class="empty-state-desc">Generate your first plan to start tracking your study timetable history.</p>
+                                <a href="/study-plan.html" class="btn btn-primary btn-sm">Generate Study Plan</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = plans.map(plan => {
+                        const isActive = plan.status === 'ACTIVE';
+
+                        return `
+                            <div class="card" style="${isActive ? 'border: 1px solid var(--primary);' : ''}">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                            <h3 style="font-size: 1.15rem; font-weight: 700;">${plan.title}</h3>
+                                            ${isActive ? '<span class="badge badge-success">Current Active Plan</span>' : '<span class="badge badge-subtle">Archived</span>'}
+                                        </div>
+                                        <div style="font-size: 0.8125rem; color: var(--text-muted);">
+                                            Generated on ${new Date(plan.generatedAt).toLocaleString()} • Duration: ${ui.formatDate(plan.startDate)} to ${ui.formatDate(plan.endDate)}
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary btn-sm" onclick="inspectPlan(${plan.id})">
+                                        Inspect Tasks (${plan.totalTasks}) &rarr;
+                                    </button>
+                                </div>
+
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; font-size: 0.8125rem; color: var(--text-muted);">
+                                    <span>Pacing: ${plan.availableHoursPerDay} hrs/day (Start: ${plan.preferredStartTime})</span>
+                                    <span><strong>${plan.completedTasks}</strong> / ${plan.totalTasks} tasks finished (${plan.progressPercentage}%)</span>
+                                </div>
+
+                                <div class="progress-bar-container" style="height: 6px; margin-top: 0.5rem;">
+                                    <div class="progress-bar-fill ${plan.progressPercentage >= 70 ? 'success' : ''}" style="width: ${plan.progressPercentage}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                } catch (err) {
+                    container.innerHTML = `<div style="color: var(--danger); text-align: center;">Failed to load plan history: ${err.message}</div>`;
+                }
+            }
+
+            window.inspectPlan = function(planId) {
+                const plan = plans.find(p => p.id === planId);
+                if (!plan) return;
+
+                document.getElementById('inspectTitle').textContent = plan.title;
+                document.getElementById('inspectDates').textContent = `${ui.formatDate(plan.startDate)} to ${ui.formatDate(plan.endDate)}`;
+
+                const list = document.getElementById('inspectTasksList');
+                const tasks = plan.tasks || [];
+
+                if (tasks.length === 0) {
+                    list.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 1rem;">No tasks recorded for this plan.</div>';
+                } else {
+                    list.innerHTML = tasks.map(t => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.85rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.8125rem; background: ${t.status === 'COMPLETED' ? 'var(--success-bg)' : 'var(--bg-card)'};">
+                            <div>
+                                <span style="font-weight: 700; color: var(--primary); margin-right: 0.5rem;">${t.taskDate} • ${t.startTime}</span>
+                                <strong>${t.subjectName}</strong>: ${t.topicName} (${t.durationMinutes}m)
+                            </div>
+                            <div>
+                                ${ui.getStatusBadge(t.status)}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                ui.openModal('inspectPlanModal');
+            };
+        });
+    </script>
+</body>
+</html>

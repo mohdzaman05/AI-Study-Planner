@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topic Management - AI Study Planner</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Curriculum Topics</h1>
+                <p class="page-subtitle">Add and track individual syllabus topics, estimated durations, and completion statuses.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <select id="subjectFilter" class="form-control" style="width: auto; min-width: 220px; font-weight: 600;">
+                    <option value="">All Subjects</option>
+                </select>
+                <button type="button" class="btn btn-primary btn-sm" id="openAddTopicBtn">
+                    ➕ Add Topic
+                </button>
+            </div>
+        </div>
+
+        <!-- Topics Table Card -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="background-color: var(--bg-subtle); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <th style="padding: 1rem 1.25rem;">Topic Name</th>
+                            <th style="padding: 1rem 1rem;">Subject</th>
+                            <th style="padding: 1rem 1rem;">Difficulty</th>
+                            <th style="padding: 1rem 1rem;">Est. Duration</th>
+                            <th style="padding: 1rem 1rem;">Status</th>
+                            <th style="padding: 1rem 1.25rem; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topicsTableBody">
+                        <tr>
+                            <td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
+                                <div class="spinner spinner-primary" style="margin-bottom: 0.5rem;"></div>
+                                <div>Loading topics...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add / Edit Topic Modal -->
+    <div class="modal-overlay" id="topicModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="card-title" id="topicModalTitle">Add Topic</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('topicModal')">✕</button>
+            </div>
+            <form id="topicForm">
+                <input type="hidden" id="editTopicId">
+                <div class="modal-body">
+                    <div class="form-group" id="modalSubjectGroup">
+                        <label class="form-label" for="modalSubjectSelect">Subject *</label>
+                        <select id="modalSubjectSelect" class="form-control" required>
+                            <option value="">Select a subject</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="topicName">Topic Title *</label>
+                        <input type="text" id="topicName" class="form-control" placeholder="e.g. Dynamic Programming (Tabulation)" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="topicDesc">Description</label>
+                        <textarea id="topicDesc" class="form-control" placeholder="Concepts, textbook chapters, or reference links..."></textarea>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="topicDiff">Difficulty *</label>
+                            <select id="topicDiff" class="form-control" required>
+                                <option value="EASY">Easy</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HARD">Hard</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="topicEstimatedMins">Est. Study Minutes *</label>
+                            <input type="number" id="topicEstimatedMins" class="form-control" value="45" min="10" max="360" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="topicStatus">Current Status</label>
+                        <select id="topicStatus" class="form-control">
+                            <option value="NOT_STARTED">Not Started</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('topicModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="submitTopicBtn">Save Topic</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Topic Modal -->
+    <div class="modal-overlay" id="deleteTopicModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="card-title">Delete Topic</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('deleteTopicModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove <strong id="deleteTopicName"></strong> from your syllabus?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('deleteTopicModal')">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteTopicBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            auth.guard(true);
+            ui.renderNavbar('subjects');
+            ui.renderFooter();
+
+            let subjects = [];
+            let allTopics = [];
+            let topicToDelete = null;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialSubjectId = urlParams.get('subjectId');
+
+            await loadSubjects();
+            await loadTopics();
+
+            document.getElementById('subjectFilter').addEventListener('change', () => {
+                renderTopicsTable();
+            });
+
+            document.getElementById('openAddTopicBtn').addEventListener('click', () => {
+                document.getElementById('topicModalTitle').textContent = 'Add Topic';
+                document.getElementById('editTopicId').value = '';
+                document.getElementById('topicForm').reset();
+                document.getElementById('topicEstimatedMins').value = '45';
+                document.getElementById('modalSubjectGroup').style.display = 'block';
+
+                const currentFilter = document.getElementById('subjectFilter').value;
+                if (currentFilter) {
+                    document.getElementById('modalSubjectSelect').value = currentFilter;
+                }
+                ui.openModal('topicModal');
+            });
+
+            document.getElementById('topicForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('editTopicId').value;
+                const subjectId = document.getElementById('modalSubjectSelect').value;
+                const name = document.getElementById('topicName').value.trim();
+                const description = document.getElementById('topicDesc').value.trim();
+                const difficulty = document.getElementById('topicDiff').value;
+                const estimatedMinutes = parseInt(document.getElementById('topicEstimatedMins').value, 10);
+                const status = document.getElementById('topicStatus').value;
+
+                const submitBtn = document.getElementById('submitTopicBtn');
+                submitBtn.disabled = true;
+
+                try {
+                    if (id) {
+                        await api.put(`/topics/${id}`, { name, description, difficulty, estimatedMinutes, status });
+                        ui.showToast(`Topic '${name}' updated!`, 'success');
+                    } else {
+                        if (!subjectId) {
+                            ui.showToast('Please choose a subject for this topic', 'error');
+                            submitBtn.disabled = false;
+                            return;
+                        }
+                        await api.post(`/subjects/${subjectId}/topics`, { name, description, difficulty, estimatedMinutes, status });
+                        ui.showToast(`Topic '${name}' added!`, 'success');
+                    }
+                    ui.closeModal('topicModal');
+                    await loadTopics();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to save topic', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            });
+
+            document.getElementById('confirmDeleteTopicBtn').addEventListener('click', async () => {
+                if (!topicToDelete) return;
+                try {
+                    await api.delete(`/topics/${topicToDelete.id}`);
+                    ui.showToast(`Topic '${topicToDelete.name}' deleted.`, 'info');
+                    ui.closeModal('deleteTopicModal');
+                    topicToDelete = null;
+                    await loadTopics();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to delete topic', 'error');
+                }
+            });
+
+            async function loadSubjects() {
+                try {
+                    subjects = await api.get('/subjects');
+                    const filterSelect = document.getElementById('subjectFilter');
+                    const modalSelect = document.getElementById('modalSubjectSelect');
+
+                    let filterOptions = '<option value="">All Subjects</option>';
+                    let modalOptions = '<option value="">Select a subject</option>';
+
+                    subjects.forEach(s => {
+                        const isSelected = initialSubjectId && initialSubjectId == s.id ? 'selected' : '';
+                        filterOptions += `<option value="${s.id}" ${isSelected}>${s.name}</option>`;
+                        modalOptions += `<option value="${s.id}">${s.name}</option>`;
+                    });
+
+                    filterSelect.innerHTML = filterOptions;
+                    modalSelect.innerHTML = modalOptions;
+                } catch (err) {
+                    ui.showToast('Error loading subjects', 'error');
+                }
+            }
+
+            async function loadTopics() {
+                try {
+                    allTopics = [];
+                    for (const s of subjects) {
+                        const topics = await api.get(`/subjects/${s.id}/topics`);
+                        allTopics.push(...topics);
+                    }
+                    renderTopicsTable();
+                } catch (err) {
+                    document.getElementById('topicsTableBody').innerHTML = `
+                        <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--danger);">Failed to load topics.</td></tr>
+                    `;
+                }
+            }
+
+            function renderTopicsTable() {
+                const tbody = document.getElementById('topicsTableBody');
+                const filterSubjectId = document.getElementById('subjectFilter').value;
+
+                let filtered = allTopics;
+                if (filterSubjectId) {
+                    filtered = allTopics.filter(t => t.subjectId == filterSubjectId);
+                }
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="padding: 3rem 1.5rem; text-align: center;">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
+                                <div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">No topics found</div>
+                                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1rem;">Add topics to your syllabus so the AI can build an accurate schedule.</p>
+                                <button class="btn btn-primary btn-sm" onclick="document.getElementById('openAddTopicBtn').click()">Add First Topic</button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = filtered.map(topic => `
+                    <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.15s ease;">
+                        <td style="padding: 1rem 1.25rem;">
+                            <div style="font-weight: 600; color: var(--text-main);">${topic.name}</div>
+                            ${topic.description ? `<div style="font-size: 0.75rem; color: var(--text-muted); max-width: 320px;">${topic.description}</div>` : ''}
+                        </td>
+                        <td style="padding: 1rem 1rem;">
+                            <span class="badge badge-subtle">${topic.subjectName}</span>
+                        </td>
+                        <td style="padding: 1rem 1rem;">
+                            ${ui.getDifficultyBadge(topic.difficulty)}
+                        </td>
+                        <td style="padding: 1rem 1rem; color: var(--text-muted); font-weight: 500;">
+                            ⏱️ ${topic.estimatedMinutes} mins
+                        </td>
+                        <td style="padding: 1rem 1rem;">
+                            <select onchange="updateTopicStatusQuick(${topic.id}, this.value)" class="form-control" style="padding: 0.25rem 0.5rem; font-size: 0.8125rem; width: auto; font-weight: 600;">
+                                <option value="NOT_STARTED" ${topic.status === 'NOT_STARTED' ? 'selected' : ''}>Not Started</option>
+                                <option value="IN_PROGRESS" ${topic.status === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
+                                <option value="COMPLETED" ${topic.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
+                            </select>
+                        </td>
+                        <td style="padding: 1rem 1.25rem; text-align: right; white-space: nowrap;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="editTopic(${topic.id})" title="Edit">
+                                ✏️
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="promptDeleteTopic(${topic.id})" title="Delete" style="color: var(--danger);">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            window.updateTopicStatusQuick = async function(topicId, newStatus) {
+                try {
+                    await api.patch(`/topics/${topicId}/status?status=${newStatus}`);
+                    ui.showToast('Topic status updated!', 'success');
+                    const target = allTopics.find(t => t.id === topicId);
+                    if (target) target.status = newStatus;
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to update status', 'error');
+                }
+            };
+
+            window.editTopic = function(topicId) {
+                const topic = allTopics.find(t => t.id === topicId);
+                if (!topic) return;
+
+                document.getElementById('topicModalTitle').textContent = 'Edit Topic';
+                document.getElementById('editTopicId').value = topic.id;
+                document.getElementById('modalSubjectSelect').value = topic.subjectId;
+                document.getElementById('modalSubjectGroup').style.display = 'none'; // subject locked during edit
+                document.getElementById('topicName').value = topic.name;
+                document.getElementById('topicDesc').value = topic.description || '';
+                document.getElementById('topicDiff').value = topic.difficulty;
+                document.getElementById('topicEstimatedMins').value = topic.estimatedMinutes;
+                document.getElementById('topicStatus').value = topic.status;
+
+                ui.openModal('topicModal');
+            };
+
+            window.promptDeleteTopic = function(topicId) {
+                const topic = allTopics.find(t => t.id === topicId);
+                if (!topic) return;
+                topicToDelete = topic;
+                document.getElementById('deleteTopicName').textContent = topic.name;
+                ui.openModal('deleteTopicModal');
+            };
+        });
+    </script>
+</body>
+</html>

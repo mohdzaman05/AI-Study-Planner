@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile - AI Study Planner</title>
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container" style="max-width: 720px;">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Student Profile & Settings</h1>
+                <p class="page-subtitle">Manage your personal study defaults and account parameters.</p>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm" id="logoutProfileBtn">
+                Log Out
+            </button>
+        </div>
+
+        <!-- Profile Form Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">👤 Account Information</h3>
+                <span class="badge badge-primary">Active Student</span>
+            </div>
+
+            <form id="profileForm">
+                <div class="form-group">
+                    <label class="form-label" for="profileFullName">Full Name *</label>
+                    <input type="text" id="profileFullName" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="profileEmail">University Email</label>
+                    <input type="email" id="profileEmail" class="form-control" disabled style="background-color: var(--bg-subtle); cursor: not-allowed;">
+                    <div class="form-hint">Email address is permanently bound to your account and cannot be modified.</div>
+                </div>
+
+                <div class="card-header" style="margin-top: 1.5rem;">
+                    <h3 class="card-title">⏱️ AI Study Defaults</h3>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label" for="profileDailyHours">Default Daily Study Hours</label>
+                        <input type="number" id="profileDailyHours" class="form-control" min="0.5" max="14" step="0.5" required>
+                        <div class="form-hint">Target daily learning duration.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="profilePreferredTime">Preferred Start Time</label>
+                        <input type="time" id="profilePreferredTime" class="form-control" required>
+                        <div class="form-hint">Default time your study blocks start.</div>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.5rem;" id="memberSinceText">
+                    Member since: ...
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                        Save Preferences
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            auth.guard(true);
+            ui.renderNavbar('profile');
+            ui.renderFooter();
+
+            document.getElementById('logoutProfileBtn').addEventListener('click', () => auth.logout());
+
+            await loadProfile();
+
+            async function loadProfile() {
+                try {
+                    const profile = await api.get('/user/profile');
+                    document.getElementById('profileFullName').value = profile.fullName;
+                    document.getElementById('profileEmail').value = profile.email;
+                    document.getElementById('profileDailyHours').value = profile.dailyStudyHours || 3.0;
+                    document.getElementById('profilePreferredTime').value = profile.preferredStudyTime || '18:00';
+
+                    if (profile.createdAt) {
+                        const created = new Date(profile.createdAt);
+                        document.getElementById('memberSinceText').textContent = `Member since: ${created.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                    }
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to load profile', 'error');
+                }
+            }
+
+            document.getElementById('profileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fullName = document.getElementById('profileFullName').value.trim();
+                const dailyStudyHours = parseFloat(document.getElementById('profileDailyHours').value);
+                const preferredStudyTime = document.getElementById('profilePreferredTime').value;
+
+                const saveBtn = document.getElementById('saveProfileBtn');
+                saveBtn.disabled = true;
+
+                try {
+                    const updated = await api.put('/user/profile', {
+                        fullName,
+                        dailyStudyHours,
+                        preferredStudyTime
+                    });
+
+                    auth.updateUser({ fullName: updated.fullName });
+                    ui.renderNavbar('profile');
+                    ui.showToast('Profile preferences updated successfully!', 'success');
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to save profile', 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

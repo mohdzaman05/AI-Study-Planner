@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Study Tasks - AI Study Planner</title>
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Tasks Management</h1>
+                <p class="page-subtitle">Inspect, filter, and mark complete your scheduled learning blocks.</p>
+            </div>
+            <a href="study-plan.html" class="btn btn-primary btn-sm">
+                View Timetable &rarr;
+            </a>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <div style="flex: 1; min-width: 180px;">
+                    <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.2rem;">Date Filter</label>
+                    <select id="dateFilterSelect" class="form-control" style="font-size: 0.8125rem;">
+                        <option value="ALL">All Dates</option>
+                        <option value="TODAY" selected>Today Only</option>
+                        <option value="TOMORROW">Tomorrow Only</option>
+                    </select>
+                </div>
+
+                <div style="flex: 1; min-width: 160px;">
+                    <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.2rem;">Status</label>
+                    <select id="statusFilterSelect" class="form-control" style="font-size: 0.8125rem;">
+                        <option value="ALL">All Statuses</option>
+                        <option value="PENDING">Pending Only</option>
+                        <option value="COMPLETED">Completed Only</option>
+                        <option value="MISSED">Missed Only</option>
+                    </select>
+                </div>
+
+                <div style="flex: 1; min-width: 180px;">
+                    <label class="form-label" style="font-size: 0.75rem; margin-bottom: 0.2rem;">Subject</label>
+                    <select id="subjectFilterSelect" class="form-control" style="font-size: 0.8125rem;">
+                        <option value="ALL">All Subjects</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks List Container -->
+        <div id="tasksListContainer" style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <div class="card" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                <div class="spinner spinner-primary" style="margin-bottom: 0.75rem;"></div>
+                <div>Loading tasks...</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            auth.guard(true);
+            ui.renderNavbar('tasks');
+            ui.renderFooter();
+
+            let allTasks = [];
+            let subjects = [];
+
+            await loadSubjects();
+            await loadTasks();
+
+            document.getElementById('dateFilterSelect').addEventListener('change', applyFilters);
+            document.getElementById('statusFilterSelect').addEventListener('change', applyFilters);
+            document.getElementById('subjectFilterSelect').addEventListener('change', applyFilters);
+
+            async function loadSubjects() {
+                try {
+                    subjects = await api.get('/subjects');
+                    const select = document.getElementById('subjectFilterSelect');
+                    subjects.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        select.appendChild(opt);
+                    });
+                } catch (e) {}
+            }
+
+            async function loadTasks() {
+                try {
+                    allTasks = await api.get('/tasks');
+                    applyFilters();
+                } catch (err) {
+                    document.getElementById('tasksListContainer').innerHTML = `
+                        <div style="color: var(--danger); text-align: center;">Failed to load tasks.</div>
+                    `;
+                }
+            }
+
+            function applyFilters() {
+                const dateFilter = document.getElementById('dateFilterSelect').value;
+                const statusFilter = document.getElementById('statusFilterSelect').value;
+                const subjectFilter = document.getElementById('subjectFilterSelect').value;
+
+                const todayStr = new Date().toISOString().split('T')[0];
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+                let filtered = allTasks;
+
+                if (dateFilter === 'TODAY') {
+                    filtered = filtered.filter(t => t.taskDate === todayStr);
+                } else if (dateFilter === 'TOMORROW') {
+                    filtered = filtered.filter(t => t.taskDate === tomorrowStr);
+                }
+
+                if (statusFilter !== 'ALL') {
+                    filtered = filtered.filter(t => t.status === statusFilter);
+                }
+
+                if (subjectFilter !== 'ALL') {
+                    filtered = filtered.filter(t => t.subjectId == subjectFilter);
+                }
+
+                renderTasks(filtered);
+            }
+
+            function renderTasks(tasks) {
+                const container = document.getElementById('tasksListContainer');
+
+                if (tasks.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span class="empty-state-icon">📋</span>
+                            <div class="empty-state-title">No matching tasks found</div>
+                            <p class="empty-state-desc">Try clearing your filters or generate a study plan to populate your schedule.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = tasks.map(task => {
+                    const isDone = task.status === 'COMPLETED';
+                    const isMissed = task.status === 'MISSED';
+
+                    return `
+                        <div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: ${isDone ? 'var(--success-bg)' : (isMissed ? 'var(--danger-bg)' : 'var(--bg-card)')};">
+                            <div style="flex: 1; margin-right: 1rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
+                                    <span style="font-weight: 700; font-size: 0.8125rem; color: var(--primary);">
+                                        📅 ${task.taskDate} • ${task.startTime} (${task.durationMinutes}m)
+                                    </span>
+                                    <span class="badge badge-subtle">${task.subjectName}</span>
+                                    ${ui.getPriorityBadge(task.priority)}
+                                    ${ui.getStatusBadge(task.status)}
+                                </div>
+                                <div style="font-weight: 600; font-size: 0.9375rem; color: var(--text-main); text-decoration: ${isDone ? 'line-through' : 'none'};">
+                                    ${task.topicName || 'Study Session'}
+                                </div>
+                                ${task.reasonRecommendation ? `
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                        💡 ${task.reasonRecommendation}
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <div style="display: flex; gap: 0.35rem;">
+                                ${!isDone ? `
+                                    <button class="btn btn-success btn-sm" onclick="completeTask(${task.id})" title="Mark Complete">
+                                        ✓ Done
+                                    </button>
+                                    ${!isMissed ? `
+                                        <button class="btn btn-danger btn-sm" onclick="missTask(${task.id})" title="Mark Missed">
+                                            ✕ Missed
+                                        </button>
+                                    ` : ''}
+                                ` : `
+                                    <button class="btn btn-secondary btn-sm" onclick="resetTask(${task.id})" title="Reopen Task">
+                                        ↩ Reopen
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            window.completeTask = async function(taskId) {
+                try {
+                    await api.put(`/tasks/${taskId}/complete`);
+                    ui.showToast('Task completed! Progress updated.', 'success');
+                    await loadTasks();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to update task', 'error');
+                }
+            };
+
+            window.missTask = async function(taskId) {
+                try {
+                    await api.put(`/tasks/${taskId}/missed`);
+                    ui.showToast('Task marked as missed.', 'info');
+                    await loadTasks();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to update task', 'error');
+                }
+            };
+
+            window.resetTask = async function(taskId) {
+                try {
+                    await api.put(`/tasks/${taskId}/status`, { status: 'PENDING' });
+                    ui.showToast('Task reopened as pending.', 'info');
+                    await loadTasks();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to reset task', 'error');
+                }
+            };
+        });
+    </script>
+</body>
+</html>

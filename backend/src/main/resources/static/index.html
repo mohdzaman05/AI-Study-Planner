@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Planner - Personalized Academic Study Companion</title>
+    <meta name="description" content="AI Study Planner helps college and university students plan studies, prioritize difficult topics, prepare for exams, and automatically adapt schedules.">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="navbar" id="navbar"></header>
+
+    <main>
+        <!-- Hero Section -->
+        <section style="background: linear-gradient(180deg, #ffffff 0%, var(--bg-main) 100%); border-bottom: 1px solid var(--border-color); padding: 4.5rem 1.5rem 3.5rem 1.5rem; text-align: center;">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-light); color: var(--primary-text); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.8125rem; font-weight: 700; margin-bottom: 1.25rem;">
+                    <span>✨ Built for B.Tech & University Students</span>
+                </div>
+                <h1 style="font-size: 2.75rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1rem; color: var(--text-main);">
+                    AI Study Planner
+                </h1>
+                <p style="font-size: 1.25rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 2rem;">
+                    Your personalized AI-powered study companion.
+                </p>
+                <p style="font-size: 1rem; color: var(--text-muted); max-width: 640px; margin: 0 auto 2.25rem auto; line-height: 1.6;">
+                    Organize your university curriculum, prioritize high-yield exam topics, generate realistic daily study schedules, and let intelligent algorithms redistribute missed sessions without burnout.
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="/register.html" class="btn btn-primary btn-lg" id="heroGetStartedBtn">Get Started Free</a>
+                    <a href="/login.html" class="btn btn-secondary btn-lg" id="heroLoginBtn">Login to Account</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Core Academic Benefits -->
+        <section class="container" style="padding-top: 3.5rem; padding-bottom: 3rem;">
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h2 style="font-size: 1.85rem; margin-bottom: 0.5rem;">Engineered for Real Student Success</h2>
+                <p style="color: var(--text-muted); max-width: 580px; margin: 0 auto;">
+                    Traditional static timetables fail when life happens. AI Study Planner adapts dynamically to your real progress.
+                </p>
+            </div>
+
+            <div class="grid-3">
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">📅</div>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Plan Your Studies</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9375rem; line-height: 1.5;">
+                        Structure your semesters cleanly with structured subjects, modular topic checklists, and estimated study times.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">🎯</div>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Prepare for Exams</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9375rem; line-height: 1.5;">
+                        Track upcoming exam dates with real-time countdowns. High-stakes tests automatically receive scheduling priority.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">⚖️</div>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Prioritize Difficult Topics</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9375rem; line-height: 1.5;">
+                        Weight topics by difficulty (Hard, Medium, Easy) and subject importance to tackle challenging concepts during peak focus hours.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">📊</div>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Track Progress</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9375rem; line-height: 1.5;">
+                        Monitor completion percentages across individual subjects, syllabus coverage, and total productive study hours.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">🔄</div>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Smart Missed Task Adjustment</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9375rem; line-height: 1.5;">
+                        Missed a session? One click redistributes your workload across open study windows instead of blindly cramming it into tomorrow.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 0.75rem;">🤖</div>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">AI Study Assistant</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9375rem; line-height: 1.5;">
+                        Ask conceptual questions, get pedagogical explanations, code examples, and high-impact exam revision tips in seconds.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section style="background-color: #ffffff; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 4rem 1.5rem;">
+            <div style="max-width: var(--max-w); margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <div style="font-size: 0.8125rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Workflow</div>
+                    <h2 style="font-size: 1.85rem;">How the System Works</h2>
+                </div>
+
+                <div class="grid-3" style="gap: 1.75rem;">
+                    <div style="background: var(--bg-main); padding: 1.75rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 1rem;">1</div>
+                        <h4 style="margin-bottom: 0.4rem;">Create your account</h4>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Secure registration with isolated database records and encrypted credentials.</p>
+                    </div>
+
+                    <div style="background: var(--bg-main); padding: 1.75rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 1rem;">2</div>
+                        <h4 style="margin-bottom: 0.4rem;">Add subjects & topics</h4>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Input course syllabus, estimated durations, and assign difficulty ratings.</p>
+                    </div>
+
+                    <div style="background: var(--bg-main); padding: 1.75rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 1rem;">3</div>
+                        <h4 style="margin-bottom: 0.4rem;">Enter your exam dates</h4>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Specify exam dates and priority weightings for impending deadlines.</p>
+                    </div>
+
+                    <div style="background: var(--bg-main); padding: 1.75rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 1rem;">4</div>
+                        <h4 style="margin-bottom: 0.4rem;">Set available study time</h4>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Tell the system your daily study hours and preferred starting time.</p>
+                    </div>
+
+                    <div style="background: var(--bg-main); padding: 1.75rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 1rem;">5</div>
+                        <h4 style="margin-bottom: 0.4rem;">Get your AI study plan</h4>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Receive a structured, realistic timetable with planned breaks and rationales.</p>
+                    </div>
+
+                    <div style="background: var(--bg-main); padding: 1.75rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 1rem;">6</div>
+                        <h4 style="margin-bottom: 0.4rem;">Track & adjust progress</h4>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Check off tasks, monitor visual metrics, and rebalance when plans change.</p>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 3rem;">
+                    <a href="/register.html" class="btn btn-primary btn-lg">Start Planning Now &rarr;</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="footer"></footer>
+
+    <!-- Scripts -->
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            ui.renderNavbar();
+            ui.renderFooter();
+        });
+    </script>
+</body>
+</html>

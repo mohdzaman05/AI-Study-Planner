@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Analytics - AI Study Planner</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Progress & Academic Analytics</h1>
+                <p class="page-subtitle">Track your syllabus mastery, task completion ratios, and total productive study hours.</p>
+            </div>
+            <a href="/study-plan.html" class="btn btn-primary btn-sm">
+                View Today's Plan &rarr;
+            </a>
+        </div>
+
+        <!-- High Level Summary Cards -->
+        <div class="grid-4" style="margin-bottom: 2rem;">
+            <!-- Overall Progress -->
+            <div class="card">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.35rem;">
+                    Overall Mastery
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.65rem;">
+                    <span style="font-size: 2.25rem; font-weight: 800; color: var(--primary);" id="statOverallPercent">0%</span>
+                    <span style="color: var(--text-muted); font-size: 0.8125rem;">completed</span>
+                </div>
+                <div class="progress-bar-container" style="height: 6px;">
+                    <div class="progress-bar-fill" id="overallProgressBar" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Topics Completed -->
+            <div class="card">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.35rem;">
+                    Syllabus Topics
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.65rem;">
+                    <span style="font-size: 2.25rem; font-weight: 800; color: var(--success);" id="statTopicsDone">0</span>
+                    <span style="color: var(--text-muted); font-size: 0.8125rem;" id="statTopicsTotal">/ 0 done</span>
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-muted);" id="statTopicsRemaining">
+                    0 topics remaining
+                </div>
+            </div>
+
+            <!-- Tasks Ratio -->
+            <div class="card">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.35rem;">
+                    Study Sessions
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.65rem;">
+                    <span style="font-size: 2.25rem; font-weight: 800; color: var(--text-main);" id="statTasksDone">0</span>
+                    <span style="color: var(--text-muted); font-size: 0.8125rem;" id="statTasksTotal">/ 0 tasks</span>
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--danger);" id="statTasksMissed">
+                    0 missed tasks
+                </div>
+            </div>
+
+            <!-- Study Hours Logged -->
+            <div class="card">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 0.35rem;">
+                    Study Hours Logged
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 0.65rem;">
+                    <span style="font-size: 2.25rem; font-weight: 800; color: var(--info);" id="statStudyHours">0.0</span>
+                    <span style="color: var(--text-muted); font-size: 0.8125rem;">hours</span>
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-muted);">
+                    Focus time completed
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject-Wise Progress Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📚 Subject-Wise Syllabus Completion</h3>
+                <a href="/subjects.html" style="font-size: 0.8125rem; font-weight: 600;">Manage Subjects &rarr;</a>
+            </div>
+
+            <div id="subjectBreakdownContainer" style="display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem 0;">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    <div class="spinner spinner-primary" style="margin-bottom: 0.5rem;"></div>
+                    <div>Loading analytics...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            auth.guard(true);
+            ui.renderNavbar('progress');
+            ui.renderFooter();
+
+            try {
+                const data = await api.get('/progress');
+
+                // Metric tiles
+                document.getElementById('statOverallPercent').textContent = `${data.overallProgressPercentage}%`;
+                document.getElementById('overallProgressBar').style.width = `${data.overallProgressPercentage}%`;
+                if (data.overallProgressPercentage >= 70) {
+                    document.getElementById('overallProgressBar').classList.add('success');
+                }
+
+                document.getElementById('statTopicsDone').textContent = data.completedTopics;
+                document.getElementById('statTopicsTotal').textContent = `/ ${data.totalTopics} done`;
+                document.getElementById('statTopicsRemaining').textContent = `${data.remainingTopics} topic(s) remaining`;
+
+                document.getElementById('statTasksDone').textContent = data.completedTasks;
+                document.getElementById('statTasksTotal').textContent = `/ ${data.totalTasks} tasks`;
+                document.getElementById('statTasksMissed').textContent = `${data.missedTasks} missed session(s)`;
+
+                document.getElementById('statStudyHours').textContent = data.totalStudyHoursLogged.toFixed(1);
+
+                // Subject bars
+                const container = document.getElementById('subjectBreakdownContainer');
+                const subjects = data.subjects || [];
+
+                if (subjects.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span class="empty-state-icon">📊</span>
+                            <div class="empty-state-title">No subjects found to track</div>
+                            <p class="empty-state-desc">Add subjects and topics to generate curriculum analytics.</p>
+                            <a href="/subjects.html" class="btn btn-primary btn-sm">Add First Subject</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = subjects.map(s => {
+                    const pct = s.progressPercentage;
+                    let barClass = '';
+                    if (pct >= 70) barClass = 'success';
+                    else if (pct >= 40) barClass = '';
+                    else barClass = 'warning';
+
+                    return `
+                        <div style="padding: 0.5rem 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                                    <span style="font-weight: 700; font-size: 1rem; color: var(--text-main);">${s.subjectName}</span>
+                                    ${ui.getDifficultyBadge(s.difficulty)}
+                                    ${ui.getPriorityBadge(s.priority)}
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <span style="font-size: 0.8125rem; color: var(--text-muted);">
+                                        ${s.completedTopics} of ${s.totalTopics} topics mastered
+                                    </span>
+                                    <span style="font-weight: 800; font-size: 0.9375rem; min-width: 45px; text-align: right; color: ${pct >= 70 ? 'var(--success-text)' : 'var(--text-main)'};">
+                                        ${pct}%
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="progress-bar-container" style="height: 10px;">
+                                <div class="progress-bar-fill ${barClass}" style="width: ${pct}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                document.getElementById('subjectBreakdownContainer').innerHTML = `
+                    <div style="color: var(--danger); text-align: center;">Failed to load analytics: ${err.message}</div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - AI Study Planner</title>
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container">
+        <!-- Page Header & Quick Actions -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title" id="welcomeHeading">Student Dashboard</h1>
+                <p class="page-subtitle">Here is your daily study briefing and upcoming exam milestones.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" id="quickAddSubjectBtn">➕ Add Subject</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="quickAddTopicBtn">➕ Add Topic</button>
+                <a href="study-plan.html" class="btn btn-primary btn-sm">⚡ Generate Plan</a>
+                <a href="ai-assistant.html" class="btn btn-secondary btn-sm">🤖 Ask AI</a>
+            </div>
+        </div>
+
+        <!-- Metric Grid -->
+        <div class="grid-3" style="margin-bottom: 2rem;">
+            <!-- Today's Progress Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📅 Today's Progress</span>
+                    <span class="badge badge-primary" id="todayProgressBadge">0 / 0 Tasks</span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 2rem; font-weight: 800;" id="todayPercentText">0%</span>
+                    <span style="color: var(--text-muted); font-size: 0.875rem;">completed</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="todayProgressBar" style="width: 0%;"></div>
+                </div>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.85rem;" id="todayTaskSummary">
+                    Checking today's study queue...
+                </p>
+            </div>
+
+            <!-- Active Plan Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🗓️ Active Study Plan</span>
+                    <span class="badge badge-success" id="planStatusBadge">Active</span>
+                </div>
+                <div id="planCardContent">
+                    <div style="font-weight: 600; font-size: 1rem; margin-bottom: 0.35rem;" id="activePlanTitle">Loading plan...</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.85rem;" id="activePlanDuration">...</div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="study-plan.html" class="btn btn-secondary btn-sm" style="flex: 1;">View Schedule</a>
+                        <a href="study-plan.html#adjust" class="btn btn-primary btn-sm" style="flex: 1;">Adjust Plan</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Study Assistant Shortcut Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">💡 Study Tip</span>
+                    <span class="badge badge-subtle">Student Advice</span>
+                </div>
+                <p style="font-size: 0.875rem; color: var(--text-main); line-height: 1.5; margin-bottom: 1rem;" id="dailyAiTip">
+                    "Break complex topics into 25-minute Pomodoro sessions. Active recall outperforms passive rereading by over 50%."
+                </p>
+                <a href="ai-assistant.html" class="btn btn-primary btn-sm" style="width: 100%;">Open AI Assistant &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Main Content 2-Column Split: Today's Tasks & Upcoming Exams / Subject Progress -->
+        <div class="grid-2" style="align-items: start;">
+            <!-- Left Column: Today's Tasks -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📝 Today's Tasks</span>
+                    <a href="tasks.html" style="font-size: 0.8125rem; font-weight: 600;">View All Tasks &rarr;</a>
+                </div>
+
+                <div id="todayTasksList" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                    <!-- Dynamically populated or empty state -->
+                    <div class="empty-state" style="padding: 2rem 1rem;">
+                        <span class="empty-state-icon">☕</span>
+                        <div class="empty-state-title">No tasks scheduled for today</div>
+                        <p class="empty-state-desc">Generate your AI study plan or add a custom task to stay ahead.</p>
+                        <a href="study-plan.html" class="btn btn-primary btn-sm">Generate AI Plan</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Upcoming Exams & Overall Progress -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Upcoming Exams Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🎯 Upcoming Exams</span>
+                        <a href="exams.html" style="font-size: 0.8125rem; font-weight: 600;">Manage Exams &rarr;</a>
+                    </div>
+                    <div id="upcomingExamsList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div style="font-size: 0.875rem; color: var(--text-muted); text-align: center; padding: 1rem;">
+                            Loading upcoming exams...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overall Subject Progress Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📊 Subject-Wise Progress</span>
+                        <a href="progress.html" style="font-size: 0.8125rem; font-weight: 600;">Detailed Analytics &rarr;</a>
+                    </div>
+                    <div id="subjectProgressList" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="font-size: 0.875rem; color: var(--text-muted); text-align: center; padding: 1rem;">
+                            Loading subject completion rates...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Quick Add Subject Modal -->
+    <div class="modal-overlay" id="quickSubjectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="card-title">Add New Subject</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('quickSubjectModal')">✕</button>
+            </div>
+            <form id="quickSubjectForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="subjectName">Subject Name *</label>
+                        <input type="text" id="subjectName" class="form-control" placeholder="e.g. Operating Systems" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="subjectDesc">Description (Optional)</label>
+                        <textarea id="subjectDesc" class="form-control" placeholder="Brief subject syllabus details..."></textarea>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="subjectDiff">Difficulty</label>
+                            <select id="subjectDiff" class="form-control">
+                                <option value="EASY">Easy</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HARD">Hard</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="subjectPriority">Priority</label>
+                            <select id="subjectPriority" class="form-control">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="subjectExamDate">Exam Date (Optional)</label>
+                        <input type="date" id="subjectExamDate" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('quickSubjectModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="saveSubjectBtn">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Add Topic Modal -->
+    <div class="modal-overlay" id="quickTopicModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="card-title">Add Topic</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('quickTopicModal')">✕</button>
+            </div>
+            <form id="quickTopicForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="topicSubjectSelect">Subject *</label>
+                        <select id="topicSubjectSelect" class="form-control" required>
+                            <option value="">Select a subject</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="topicName">Topic Name *</label>
+                        <input type="text" id="topicName" class="form-control" placeholder="e.g. Binary Search Trees" required>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="topicDiff">Difficulty</label>
+                            <select id="topicDiff" class="form-control">
+                                <option value="EASY">Easy</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HARD">Hard</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="topicMinutes">Est. Study Minutes</label>
+                            <input type="number" id="topicMinutes" class="form-control" value="45" min="10" max="360">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('quickTopicModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="saveTopicBtn">Save Topic</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="footer"></footer>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Protect page
+            auth.guard(true);
+
+            ui.renderNavbar('dashboard');
+            ui.renderFooter();
+
+            const user = auth.getUser();
+            if (user) {
+                document.getElementById('welcomeHeading').textContent = `Welcome back, ${user.fullName.split(' ')[0]} 👋`;
+            }
+
+            let userSubjects = [];
+
+            // Load Dashboard Data
+            await Promise.all([
+                loadTodayTasks(),
+                loadActivePlan(),
+                loadUpcomingExams(),
+                loadSubjectProgress()
+            ]);
+
+            // Quick modal openers
+            document.getElementById('quickAddSubjectBtn').addEventListener('click', () => {
+                ui.openModal('quickSubjectModal');
+            });
+
+            document.getElementById('quickAddTopicBtn').addEventListener('click', async () => {
+                await populateSubjectSelect();
+                ui.openModal('quickTopicModal');
+            });
+
+            // Quick Add Subject Submit
+            document.getElementById('quickSubjectForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('subjectName').value.trim();
+                const description = document.getElementById('subjectDesc').value.trim();
+                const difficulty = document.getElementById('subjectDiff').value;
+                const priority = document.getElementById('subjectPriority').value;
+                const examDate = document.getElementById('subjectExamDate').value || null;
+
+                try {
+                    await api.post('/subjects', { name, description, difficulty, priority, examDate });
+                    ui.closeModal('quickSubjectModal');
+                    ui.showToast(`Subject '${name}' created successfully!`, 'success');
+                    document.getElementById('quickSubjectForm').reset();
+                    await loadSubjectProgress();
+                    await loadUpcomingExams();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to create subject', 'error');
+                }
+            });
+
+            // Quick Add Topic Submit
+            document.getElementById('quickTopicForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const subjectId = document.getElementById('topicSubjectSelect').value;
+                const name = document.getElementById('topicName').value.trim();
+                const difficulty = document.getElementById('topicDiff').value;
+                const estimatedMinutes = parseInt(document.getElementById('topicMinutes').value, 10);
+
+                if (!subjectId) {
+                    ui.showToast('Please select a subject', 'error');
+                    return;
+                }
+
+                try {
+                    await api.post(`/subjects/${subjectId}/topics`, {
+                        name,
+                        difficulty,
+                        estimatedMinutes,
+                        status: 'NOT_STARTED'
+                    });
+                    ui.closeModal('quickTopicModal');
+                    ui.showToast(`Topic '${name}' added!`, 'success');
+                    document.getElementById('quickTopicForm').reset();
+                    await loadSubjectProgress();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to add topic', 'error');
+                }
+            });
+
+            async function populateSubjectSelect() {
+                const select = document.getElementById('topicSubjectSelect');
+                select.innerHTML = '<option value="">Loading subjects...</option>';
+                try {
+                    userSubjects = await api.get('/subjects');
+                    if (userSubjects.length === 0) {
+                        select.innerHTML = '<option value="">No subjects found. Please add a subject first.</option>';
+                    } else {
+                        select.innerHTML = '<option value="">Select a subject</option>' +
+                            userSubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                    }
+                } catch (e) {
+                    select.innerHTML = '<option value="">Error loading subjects</option>';
+                }
+            }
+
+            // Loaders
+            async function loadTodayTasks() {
+                const container = document.getElementById('todayTasksList');
+                try {
+                    const tasks = await api.get('/tasks/today');
+                    const total = tasks.length;
+                    const completed = tasks.filter(t => t.status === 'COMPLETED').length;
+                    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                    document.getElementById('todayProgressBadge').textContent = `${completed} / ${total} Tasks`;
+                    document.getElementById('todayPercentText').textContent = `${percentage}%`;
+                    document.getElementById('todayProgressBar').style.width = `${percentage}%`;
+                    if (percentage === 100 && total > 0) {
+                        document.getElementById('todayProgressBar').classList.add('success');
+                        document.getElementById('todayTaskSummary').textContent = '🎉 Awesome work! All tasks for today are completed!';
+                    } else {
+                        document.getElementById('todayTaskSummary').textContent = `${total - completed} task(s) remaining for today.`;
+                    }
+
+                    if (tasks.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state" style="padding: 2.25rem 1rem;">
+                                <span class="empty-state-icon">☕</span>
+                                <div class="empty-state-title">No tasks scheduled for today</div>
+                                <p class="empty-state-desc">Generate your personalized AI study plan to populate your daily schedule.</p>
+                                <a href="study-plan.html" class="btn btn-primary btn-sm">Generate AI Study Plan</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = tasks.map(task => {
+                        const isDone = task.status === 'COMPLETED';
+                        const isMissed = task.status === 'MISSED';
+                        return `
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: ${isDone ? 'var(--success-bg)' : (isMissed ? 'var(--danger-bg)' : 'var(--bg-card)')};">
+                                <div style="flex: 1; margin-right: 1rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
+                                        <span style="font-weight: 700; font-size: 0.8125rem; color: var(--primary);">${task.startTime || '18:00'} (${task.durationMinutes}m)</span>
+                                        <span class="badge badge-subtle">${task.subjectName}</span>
+                                        ${ui.getPriorityBadge(task.priority)}
+                                        ${ui.getStatusBadge(task.status)}
+                                    </div>
+                                    <div style="font-weight: 600; font-size: 0.9375rem; color: var(--text-main); text-decoration: ${isDone ? 'line-through' : 'none'};">
+                                        ${task.topicName || 'Study Session'}
+                                    </div>
+                                    ${task.reasonRecommendation ? `
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                            💡 ${task.reasonRecommendation}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div style="display: flex; gap: 0.35rem;">
+                                    ${!isDone ? `
+                                        <button class="btn btn-success btn-sm" onclick="completeTaskAction(${task.id})" title="Mark Complete">
+                                            ✓ Done
+                                        </button>
+                                        ${!isMissed ? `
+                                            <button class="btn btn-danger btn-sm" onclick="missTaskAction(${task.id})" title="Mark Missed">
+                                                ✕ Missed
+                                            </button>
+                                        ` : ''}
+                                    ` : `
+                                        <span style="font-size: 0.8125rem; color: var(--success-text); font-weight: 600;">✓ Completed</span>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                } catch (e) {
+                    container.innerHTML = `<div style="color: var(--danger-text); font-size: 0.875rem;">Failed to load today's tasks.</div>`;
+                }
+            }
+
+            async function loadActivePlan() {
+                try {
+                    const plan = await api.get('/study-plans/active');
+                    if (!plan || !plan.id) {
+                        document.getElementById('planStatusBadge').className = 'badge badge-subtle';
+                        document.getElementById('planStatusBadge').textContent = 'None Active';
+                        document.getElementById('activePlanTitle').textContent = 'No active study plan';
+                        document.getElementById('activePlanDuration').textContent = 'Generate an AI schedule to start organized revision.';
+                        return;
+                    }
+
+                    document.getElementById('activePlanTitle').textContent = plan.title;
+                    document.getElementById('activePlanDuration').textContent = `📅 ${ui.formatDate(plan.startDate)} to ${ui.formatDate(plan.endDate)} (${plan.availableHoursPerDay} hrs/day)`;
+                } catch (e) {
+                    document.getElementById('activePlanTitle').textContent = 'Generate your first plan';
+                }
+            }
+
+            async function loadUpcomingExams() {
+                const container = document.getElementById('upcomingExamsList');
+                try {
+                    const exams = await api.get('/exams');
+                    if (exams.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state" style="padding: 1.5rem 1rem;">
+                                <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">📝</div>
+                                <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">No exams tracked yet</div>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">Add your upcoming exam dates to enable priority AI scheduling.</p>
+                                <a href="exams.html" class="btn btn-secondary btn-sm">Add Exam Date</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = exams.slice(0, 4).map(exam => {
+                        const days = exam.daysRemaining;
+                        let badgeClass = 'badge-primary';
+                        let daysText = `${days} days left`;
+                        if (days < 0) {
+                            badgeClass = 'badge-subtle';
+                            daysText = 'Passed';
+                        } else if (days <= 5) {
+                            badgeClass = 'badge-danger';
+                            daysText = `🚨 ${days} days left!`;
+                        } else if (days <= 14) {
+                            badgeClass = 'badge-warning';
+                            daysText = `⚠️ ${days} days left`;
+                        }
+
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0.9rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card);">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-main);">${exam.subjectName}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">${ui.formatDate(exam.examDate)} ${exam.examTime ? '• ' + exam.examTime : ''}</div>
+                                </div>
+                                <span class="badge ${badgeClass}">${daysText}</span>
+                            </div>
+                        `;
+                    }).join('');
+                } catch (e) {
+                    container.innerHTML = `<div style="font-size: 0.875rem; color: var(--danger-text);">Failed to load exams.</div>`;
+                }
+            }
+
+            async function loadSubjectProgress() {
+                const container = document.getElementById('subjectProgressList');
+                try {
+                    const progressData = await api.get('/progress');
+                    const subjects = progressData.subjects || [];
+
+                    if (subjects.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state" style="padding: 1.5rem 1rem;">
+                                <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">No subjects added yet</div>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">Add your academic subjects and curriculum topics.</p>
+                                <a href="subjects.html" class="btn btn-secondary btn-sm">Add Subject</a>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = subjects.map(s => `
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-main);">${s.subjectName}</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">(${s.completedTopics}/${s.totalTopics} topics)</span>
+                                </div>
+                                <span style="font-weight: 700; font-size: 0.8125rem; color: ${s.progressPercentage >= 70 ? 'var(--success-text)' : 'var(--text-main)'};">
+                                    ${s.progressPercentage}%
+                                </span>
+                            </div>
+                            <div class="progress-bar-container" style="height: 7px;">
+                                <div class="progress-bar-fill ${s.progressPercentage >= 70 ? 'success' : ''}" style="width: ${s.progressPercentage}%;"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (e) {
+                    container.innerHTML = `<div style="font-size: 0.875rem; color: var(--danger-text);">Failed to load progress.</div>`;
+                }
+            }
+
+            // Expose Task Action buttons globally
+            window.completeTaskAction = async function(taskId) {
+                try {
+                    await api.put(`/tasks/${taskId}/complete`);
+                    ui.showToast('Task completed! Progress updated.', 'success');
+                    await Promise.all([loadTodayTasks(), loadSubjectProgress()]);
+                } catch (err) {
+                    ui.showToast(err.message || 'Could not update task', 'error');
+                }
+            };
+
+            window.missTaskAction = async function(taskId) {
+                try {
+                    await api.put(`/tasks/${taskId}/missed`);
+                    ui.showToast('Task marked as missed. You can click "Adjust Plan" to redistribute it.', 'info');
+                    await Promise.all([loadTodayTasks(), loadSubjectProgress()]);
+                } catch (err) {
+                    ui.showToast(err.message || 'Could not update task', 'error');
+                }
+            };
+        });
+    </script>
+</body>
+</html>

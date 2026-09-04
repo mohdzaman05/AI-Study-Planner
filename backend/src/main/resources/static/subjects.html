@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subject Management - AI Study Planner</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Subjects</h1>
+                <p class="page-subtitle">Manage your semester subjects, difficulty ratings, and curriculum weightings.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="openAddSubjectBtn">
+                ➕ Add Subject
+            </button>
+        </div>
+
+        <!-- Subjects Grid Container -->
+        <div id="subjectsContainer" class="grid-3">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
+                <div class="spinner spinner-primary" style="margin-bottom: 0.75rem;"></div>
+                <div>Loading your subjects...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add / Edit Subject Modal -->
+    <div class="modal-overlay" id="subjectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="card-title" id="modalTitle">Add Subject</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('subjectModal')">✕</button>
+            </div>
+            <form id="subjectForm">
+                <input type="hidden" id="editSubjectId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="subjectName">Subject Name *</label>
+                        <input type="text" id="subjectName" class="form-control" placeholder="e.g. Data Structures & Algorithms" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="subjectDesc">Description</label>
+                        <textarea id="subjectDesc" class="form-control" placeholder="Key syllabus objectives, textbooks, or course notes..."></textarea>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="subjectDiff">Difficulty *</label>
+                            <select id="subjectDiff" class="form-control" required>
+                                <option value="EASY">Easy</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HARD">Hard</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="subjectPriority">Priority *</label>
+                            <select id="subjectPriority" class="form-control" required>
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="subjectExamDate">Upcoming Exam Date (Optional)</label>
+                        <input type="date" id="subjectExamDate" class="form-control">
+                        <div class="form-hint">Used by the AI to prioritize scheduling as the exam approaches.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('subjectModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="submitSubjectBtn">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3 class="card-title">Delete Subject</h3>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('deleteModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.9375rem; color: var(--text-main); margin-bottom: 0.75rem;">
+                    Are you sure you want to delete <strong id="deleteSubjectName"></strong>?
+                </p>
+                <p style="font-size: 0.8125rem; color: var(--danger-text); background: var(--danger-bg); padding: 0.65rem; border-radius: var(--radius-sm);">
+                    ⚠️ This will permanently remove all associated topics, exams, and scheduled tasks for this subject.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ui.closeModal('deleteModal')">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            auth.guard(true);
+            ui.renderNavbar('subjects');
+            ui.renderFooter();
+
+            let subjectsList = [];
+            let subjectToDelete = null;
+
+            loadSubjects();
+
+            document.getElementById('openAddSubjectBtn').addEventListener('click', () => {
+                document.getElementById('modalTitle').textContent = 'Add Subject';
+                document.getElementById('editSubjectId').value = '';
+                document.getElementById('subjectForm').reset();
+                ui.openModal('subjectModal');
+            });
+
+            // Form Submit (Add or Edit)
+            document.getElementById('subjectForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('editSubjectId').value;
+                const name = document.getElementById('subjectName').value.trim();
+                const description = document.getElementById('subjectDesc').value.trim();
+                const difficulty = document.getElementById('subjectDiff').value;
+                const priority = document.getElementById('subjectPriority').value;
+                const examDate = document.getElementById('subjectExamDate').value || null;
+
+                const submitBtn = document.getElementById('submitSubjectBtn');
+                submitBtn.disabled = true;
+
+                try {
+                    if (id) {
+                        await api.put(`/subjects/${id}`, { name, description, difficulty, priority, examDate });
+                        ui.showToast(`Subject '${name}' updated!`, 'success');
+                    } else {
+                        await api.post('/subjects', { name, description, difficulty, priority, examDate });
+                        ui.showToast(`Subject '${name}' created!`, 'success');
+                    }
+                    ui.closeModal('subjectModal');
+                    loadSubjects();
+                } catch (err) {
+                    ui.showToast(err.message || 'Error saving subject', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            });
+
+            // Delete confirmation
+            document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+                if (!subjectToDelete) return;
+                try {
+                    await api.delete(`/subjects/${subjectToDelete.id}`);
+                    ui.showToast(`Subject '${subjectToDelete.name}' deleted.`, 'info');
+                    ui.closeModal('deleteModal');
+                    subjectToDelete = null;
+                    loadSubjects();
+                } catch (err) {
+                    ui.showToast(err.message || 'Failed to delete subject', 'error');
+                }
+            });
+
+            async function loadSubjects() {
+                const container = document.getElementById('subjectsContainer');
+                try {
+                    subjectsList = await api.get('/subjects');
+                    if (subjectsList.length === 0) {
+                        container.innerHTML = `
+                            <div style="grid-column: 1 / -1;">
+                                <div class="empty-state">
+                                    <span class="empty-state-icon">📚</span>
+                                    <h2 class="empty-state-title">No subjects added yet</h2>
+                                    <p class="empty-state-desc">Add your first subject to start building your curriculum and generating AI study plans.</p>
+                                    <button type="button" class="btn btn-primary" onclick="document.getElementById('openAddSubjectBtn').click()">
+                                        Add Subject
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = subjectsList.map(subject => `
+                        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                    <h3 style="font-size: 1.15rem; font-weight: 700;">${subject.name}</h3>
+                                    ${ui.getPriorityBadge(subject.priority)}
+                                </div>
+                                <div style="display: flex; gap: 0.4rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                                    ${ui.getDifficultyBadge(subject.difficulty)}
+                                    ${subject.examDate ? `<span class="badge badge-info">Exam: ${ui.formatDate(subject.examDate)}</span>` : ''}
+                                </div>
+                                <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem;">
+                                    ${subject.description || 'No description provided.'}
+                                </p>
+                            </div>
+
+                            <div>
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.35rem;">
+                                        <span>Topic Completion</span>
+                                        <span>${subject.completedTopicCount} / ${subject.topicCount} (${subject.progressPercentage}%)</span>
+                                    </div>
+                                    <div class="progress-bar-container" style="height: 8px;">
+                                        <div class="progress-bar-fill ${subject.progressPercentage >= 70 ? 'success' : ''}" style="width: ${subject.progressPercentage}%;"></div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border-subtle); padding-top: 0.85rem;">
+                                    <a href="/topics.html?subjectId=${subject.id}" class="btn btn-primary btn-sm" style="flex: 1;">
+                                        Manage Topics &rarr;
+                                    </a>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="editSubject(${subject.id})" title="Edit Subject">
+                                        ✏️
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="promptDeleteSubject(${subject.id})" title="Delete Subject" style="color: var(--danger);">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                } catch (err) {
+                    container.innerHTML = `<div style="grid-column: 1 / -1; color: var(--danger); text-align: center;">Failed to load subjects: ${err.message}</div>`;
+                }
+            }
+
+            window.editSubject = function(id) {
+                const subject = subjectsList.find(s => s.id === id);
+                if (!subject) return;
+
+                document.getElementById('modalTitle').textContent = 'Edit Subject';
+                document.getElementById('editSubjectId').value = subject.id;
+                document.getElementById('subjectName').value = subject.name;
+                document.getElementById('subjectDesc').value = subject.description || '';
+                document.getElementById('subjectDiff').value = subject.difficulty;
+                document.getElementById('subjectPriority').value = subject.priority;
+                document.getElementById('subjectExamDate').value = subject.examDate || '';
+
+                ui.openModal('subjectModal');
+            };
+
+            window.promptDeleteSubject = function(id) {
+                const subject = subjectsList.find(s => s.id === id);
+                if (!subject) return;
+                subjectToDelete = subject;
+                document.getElementById('deleteSubjectName').textContent = subject.name;
+                ui.openModal('deleteModal');
+            };
+        });
+    </script>
+</body>
+</html>

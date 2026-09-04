@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - AI Study Planner</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="background-color: var(--bg-main); display: flex; flex-direction: column; min-height: 100vh;">
+    <!-- Navigation -->
+    <header class="navbar" id="navbar"></header>
+
+    <main class="container" style="display: flex; align-items: center; justify-content: center; flex: 1;">
+        <div class="card" style="width: 100%; max-width: 440px; padding: 2.25rem 2rem;">
+            <div style="text-align: center; margin-bottom: 1.75rem;">
+                <div style="font-size: 2.25rem; margin-bottom: 0.5rem;">🎓</div>
+                <h1 style="font-size: 1.5rem; margin-bottom: 0.35rem;">Welcome Back</h1>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Enter your credentials to access your study planner</p>
+            </div>
+
+            <div id="errorAlert" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: var(--danger-bg); border: 1px solid #fca5a5; color: var(--danger-text); font-size: 0.875rem; margin-bottom: 1.25rem;"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="email">University / Student Email</label>
+                    <input type="email" id="email" class="form-control" placeholder="name@university.edu" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                        <label class="form-label" for="password" style="margin-bottom: 0;">Password</label>
+                        <a href="javascript:void(0)" id="forgotPasswordLink" style="font-size: 0.8125rem;">Forgot password?</a>
+                    </div>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem;">
+                    <span id="btnText">Log In</span>
+                    <span id="btnSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+
+            <!-- Quick Demo Credentials Fill -->
+            <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.65rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Quick Reviewer Access</div>
+                <button type="button" id="demoAccountBtn" class="btn btn-secondary btn-sm" style="width: 100%;">
+                    ⚡ Auto-fill Demo Account (demo@example.com)
+                </button>
+            </div>
+
+            <div style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted);">
+                Don't have an account? <a href="/register.html" style="font-weight: 600;">Create account</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal-overlay" id="forgotModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="card-title">Reset Password</h3>
+                <button type="button" class="btn btn-secondary btn-sm" id="closeForgotModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                    Enter your registered email address and our support system will simulate sending you a password reset verification link.
+                </p>
+                <div class="form-group">
+                    <label class="form-label" for="resetEmail">Email Address</label>
+                    <input type="email" id="resetEmail" class="form-control" placeholder="name@university.edu">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" id="cancelForgotBtn">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="sendResetBtn">Send Reset Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="footer"></footer>
+
+    <!-- Scripts -->
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/ui.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Guard: If already logged in, redirect to dashboard
+            auth.guard(false);
+
+            ui.renderNavbar('login');
+            ui.renderFooter();
+
+            // Check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('registered') === 'true') {
+                ui.showToast('Account registered successfully! You may now log in.', 'success');
+            } else if (urlParams.get('expired') === 'true') {
+                ui.showToast('Session expired. Please log in again.', 'info');
+            }
+
+            const loginForm = document.getElementById('loginForm');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const errorAlert = document.getElementById('errorAlert');
+
+            // Quick Demo button
+            document.getElementById('demoAccountBtn').addEventListener('click', () => {
+                emailInput.value = 'demo@example.com';
+                passwordInput.value = 'Demo@12345';
+                ui.showToast('Demo student credentials populated!', 'info');
+            });
+
+            // Login submission
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                errorAlert.style.display = 'none';
+
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+
+                if (!email || !password) {
+                    errorAlert.textContent = 'Please enter both email and password.';
+                    errorAlert.style.display = 'block';
+                    return;
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                btnText.textContent = 'Signing in...';
+                btnSpinner.style.display = 'inline-block';
+
+                try {
+                    const response = await api.post('/auth/login', { email, password });
+                    auth.saveSession(response);
+                    ui.showToast(`Welcome back, ${response.fullName}!`, 'success');
+
+                    const redirect = urlParams.get('redirect') || '/dashboard.html';
+                    setTimeout(() => {
+                        window.location.href = redirect;
+                    }, 500);
+                } catch (error) {
+                    errorAlert.textContent = error.message || 'Invalid email or password. Please try again.';
+                    errorAlert.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Log In';
+                    btnSpinner.style.display = 'none';
+                }
+            });
+
+            // Forgot Password Modal Handlers
+            document.getElementById('forgotPasswordLink').addEventListener('click', () => {
+                document.getElementById('resetEmail').value = emailInput.value;
+                ui.openModal('forgotModal');
+            });
+            document.getElementById('closeForgotModal').addEventListener('click', () => ui.closeModal('forgotModal'));
+            document.getElementById('cancelForgotBtn').addEventListener('click', () => ui.closeModal('forgotModal'));
+            document.getElementById('sendResetBtn').addEventListener('click', () => {
+                const resetEmail = document.getElementById('resetEmail').value.trim();
+                if (!resetEmail) {
+                    alert('Please provide your email address.');
+                    return;
+                }
+                ui.closeModal('forgotModal');
+                ui.showToast(`Password reset simulation sent to ${resetEmail}`, 'success');
+            });
+        });
+    </script>
+</body>
+</html>
