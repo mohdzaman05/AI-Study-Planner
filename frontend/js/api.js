@@ -1,12 +1,10 @@
 /**
  * AI Study Planner - API Client Module
- * Supports both standalone Spring Boot (:8080) and VS Code Live Server (:5500)
+ * Unified architecture: all API calls use relative paths
  */
 
-// Automatically target Spring Boot backend on :8080 when running through VS Code Live Server or external frontend dev server
-const API_BASE = (window.location.port === '8080')
-    ? '/api'
-    : 'http://localhost:8080/api';
+// Unified backend: all API calls use relative paths
+const API_BASE = '/api';
 
 const api = {
     async request(endpoint, options = {}) {
@@ -67,7 +65,7 @@ const api = {
         } catch (error) {
             console.error(`API Error on ${endpoint}:`, error);
             if (!error.status && (error.name === 'TypeError' || (error.message && error.message.toLowerCase().includes('fetch')))) {
-                const connError = new Error('Unable to connect to backend server at http://localhost:8080. Please make sure the backend is running (double-click start-backend.bat).');
+                const connError = new Error('Unable to connect to backend server. Please make sure the backend is running (double-click start-backend.bat).');
                 connError.isConnectionError = true;
                 throw connError;
             }

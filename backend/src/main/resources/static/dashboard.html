@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - AI Study Planner</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <!-- Navigation Header -->
@@ -20,8 +24,8 @@
             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                 <button type="button" class="btn btn-secondary btn-sm" id="quickAddSubjectBtn">➕ Add Subject</button>
                 <button type="button" class="btn btn-secondary btn-sm" id="quickAddTopicBtn">➕ Add Topic</button>
-                <a href="/study-plan.html" class="btn btn-primary btn-sm">⚡ Generate Plan</a>
-                <a href="/ai-assistant.html" class="btn btn-secondary btn-sm">🤖 Ask AI</a>
+                <a href="study-plan.html" class="btn btn-primary btn-sm">⚡ Generate Plan</a>
+                <a href="ai-assistant.html" class="btn btn-secondary btn-sm">🤖 Ask AI</a>
             </div>
         </div>
 
@@ -55,22 +59,22 @@
                     <div style="font-weight: 600; font-size: 1rem; margin-bottom: 0.35rem;" id="activePlanTitle">Loading plan...</div>
                     <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.85rem;" id="activePlanDuration">...</div>
                     <div style="display: flex; gap: 0.5rem;">
-                        <a href="/study-plan.html" class="btn btn-secondary btn-sm" style="flex: 1;">View Schedule</a>
-                        <a href="/study-plan.html#adjust" class="btn btn-primary btn-sm" style="flex: 1;">Adjust Plan</a>
+                        <a href="study-plan.html" class="btn btn-secondary btn-sm" style="flex: 1;">View Schedule</a>
+                        <a href="study-plan.html#adjust" class="btn btn-primary btn-sm" style="flex: 1;">Adjust Plan</a>
                     </div>
                 </div>
             </div>
 
             <!-- AI Study Assistant Shortcut Card -->
-            <div class="card" style="background: linear-gradient(145deg, #ffffff 0%, var(--primary-light) 100%);">
+            <div class="card">
                 <div class="card-header">
-                    <span class="card-title">💡 AI Study Tip</span>
-                    <span class="badge badge-primary">Smart Coach</span>
+                    <span class="card-title">💡 Study Tip</span>
+                    <span class="badge badge-subtle">Student Advice</span>
                 </div>
-                <p style="font-size: 0.875rem; color: var(--primary-text); line-height: 1.5; margin-bottom: 1rem;" id="dailyAiTip">
+                <p style="font-size: 0.875rem; color: var(--text-main); line-height: 1.5; margin-bottom: 1rem;" id="dailyAiTip">
                     "Break complex topics into 25-minute Pomodoro sessions. Active recall outperforms passive rereading by over 50%."
                 </p>
-                <a href="/ai-assistant.html" class="btn btn-primary btn-sm" style="width: 100%;">Open AI Assistant &rarr;</a>
+                <a href="ai-assistant.html" class="btn btn-primary btn-sm" style="width: 100%;">Open AI Assistant &rarr;</a>
             </div>
         </div>
 
@@ -80,7 +84,7 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">📝 Today's Tasks</span>
-                    <a href="/tasks.html" style="font-size: 0.8125rem; font-weight: 600;">View All Tasks &rarr;</a>
+                    <a href="tasks.html" style="font-size: 0.8125rem; font-weight: 600;">View All Tasks &rarr;</a>
                 </div>
 
                 <div id="todayTasksList" style="display: flex; flex-direction: column; gap: 0.85rem;">
@@ -89,7 +93,7 @@
                         <span class="empty-state-icon">☕</span>
                         <div class="empty-state-title">No tasks scheduled for today</div>
                         <p class="empty-state-desc">Generate your AI study plan or add a custom task to stay ahead.</p>
-                        <a href="/study-plan.html" class="btn btn-primary btn-sm">Generate AI Plan</a>
+                        <a href="study-plan.html" class="btn btn-primary btn-sm">Generate AI Plan</a>
                     </div>
                 </div>
             </div>
@@ -100,7 +104,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-title">🎯 Upcoming Exams</span>
-                        <a href="/exams.html" style="font-size: 0.8125rem; font-weight: 600;">Manage Exams &rarr;</a>
+                        <a href="exams.html" style="font-size: 0.8125rem; font-weight: 600;">Manage Exams &rarr;</a>
                     </div>
                     <div id="upcomingExamsList" style="display: flex; flex-direction: column; gap: 0.75rem;">
                         <div style="font-size: 0.875rem; color: var(--text-muted); text-align: center; padding: 1rem;">
@@ -113,7 +117,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-title">📊 Subject-Wise Progress</span>
-                        <a href="/progress.html" style="font-size: 0.8125rem; font-weight: 600;">Detailed Analytics &rarr;</a>
+                        <a href="progress.html" style="font-size: 0.8125rem; font-weight: 600;">Detailed Analytics &rarr;</a>
                     </div>
                     <div id="subjectProgressList" style="display: flex; flex-direction: column; gap: 1rem;">
                         <div style="font-size: 0.875rem; color: var(--text-muted); text-align: center; padding: 1rem;">
@@ -219,9 +223,9 @@
     <footer class="footer" id="footer"></footer>
 
     <!-- Scripts -->
-    <script src="/js/api.js"></script>
-    <script src="/js/auth.js"></script>
-    <script src="/js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             // Protect page
@@ -346,7 +350,7 @@
                                 <span class="empty-state-icon">☕</span>
                                 <div class="empty-state-title">No tasks scheduled for today</div>
                                 <p class="empty-state-desc">Generate your personalized AI study plan to populate your daily schedule.</p>
-                                <a href="/study-plan.html" class="btn btn-primary btn-sm">Generate AI Study Plan</a>
+                                <a href="study-plan.html" class="btn btn-primary btn-sm">Generate AI Study Plan</a>
                             </div>
                         `;
                         return;
@@ -356,7 +360,7 @@
                         const isDone = task.status === 'COMPLETED';
                         const isMissed = task.status === 'MISSED';
                         return `
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: ${isDone ? '#f0fdf4' : (isMissed ? '#fff1f2' : '#ffffff')};">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: ${isDone ? 'var(--success-bg)' : (isMissed ? 'var(--danger-bg)' : 'var(--bg-card)')};">
                                 <div style="flex: 1; margin-right: 1rem;">
                                     <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; flex-wrap: wrap;">
                                         <span style="font-weight: 700; font-size: 0.8125rem; color: var(--primary);">${task.startTime || '18:00'} (${task.durationMinutes}m)</span>
@@ -392,7 +396,7 @@
                     }).join('');
 
                 } catch (e) {
-                    container.innerHTML = `<div style="color: var(--danger); font-size: 0.875rem;">Failed to load today's tasks.</div>`;
+                    container.innerHTML = `<div style="color: var(--danger-text); font-size: 0.875rem;">Failed to load today's tasks.</div>`;
                 }
             }
 
@@ -424,7 +428,7 @@
                                 <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">📝</div>
                                 <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">No exams tracked yet</div>
                                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">Add your upcoming exam dates to enable priority AI scheduling.</p>
-                                <a href="/exams.html" class="btn btn-secondary btn-sm">Add Exam Date</a>
+                                <a href="exams.html" class="btn btn-secondary btn-sm">Add Exam Date</a>
                             </div>
                         `;
                         return;
@@ -446,7 +450,7 @@
                         }
 
                         return `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0.9rem; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0.9rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card);">
                                 <div>
                                     <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-main);">${exam.subjectName}</div>
                                     <div style="font-size: 0.75rem; color: var(--text-muted);">${ui.formatDate(exam.examDate)} ${exam.examTime ? '• ' + exam.examTime : ''}</div>
@@ -456,7 +460,7 @@
                         `;
                     }).join('');
                 } catch (e) {
-                    container.innerHTML = `<div style="font-size: 0.875rem; color: var(--danger);">Failed to load exams.</div>`;
+                    container.innerHTML = `<div style="font-size: 0.875rem; color: var(--danger-text);">Failed to load exams.</div>`;
                 }
             }
 
@@ -471,7 +475,7 @@
                             <div class="empty-state" style="padding: 1.5rem 1rem;">
                                 <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">No subjects added yet</div>
                                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">Add your academic subjects and curriculum topics.</p>
-                                <a href="/subjects.html" class="btn btn-secondary btn-sm">Add Subject</a>
+                                <a href="subjects.html" class="btn btn-secondary btn-sm">Add Subject</a>
                             </div>
                         `;
                         return;
@@ -481,7 +485,7 @@
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span style="font-weight: 600; font-size: 0.875rem;">${s.subjectName}</span>
+                                    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-main);">${s.subjectName}</span>
                                     <span style="font-size: 0.75rem; color: var(--text-muted);">(${s.completedTopics}/${s.totalTopics} topics)</span>
                                 </div>
                                 <span style="font-weight: 700; font-size: 0.8125rem; color: ${s.progressPercentage >= 70 ? 'var(--success-text)' : 'var(--text-main)'};">
@@ -494,7 +498,7 @@
                         </div>
                     `).join('');
                 } catch (e) {
-                    container.innerHTML = `<div style="font-size: 0.875rem; color: var(--danger);">Failed to load progress.</div>`;
+                    container.innerHTML = `<div style="font-size: 0.875rem; color: var(--danger-text);">Failed to load progress.</div>`;
                 }
             }
 

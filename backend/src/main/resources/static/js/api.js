@@ -1,7 +1,9 @@
 /**
  * AI Study Planner - API Client Module
+ * Unified architecture: all API calls use relative paths
  */
 
+// Unified backend: all API calls use relative paths
 const API_BASE = '/api';
 
 const api = {
@@ -29,13 +31,13 @@ const api = {
             // Handle 401 Unauthorized
             if (response.status === 401) {
                 const currentPath = window.location.pathname;
-                const publicPages = ['/', '/index.html', '/login.html', '/register.html'];
-                const isPublic = publicPages.some(page => currentPath.endsWith(page));
+                const publicPages = ['index.html', 'login.html', 'register.html'];
+                const isPublic = publicPages.some(page => currentPath.endsWith(page)) || currentPath === '/' || currentPath === '';
 
                 if (!isPublic) {
                     localStorage.removeItem('study_token');
                     localStorage.removeItem('study_user');
-                    window.location.href = '/login.html?expired=true';
+                    window.location.href = 'login.html?expired=true';
                     return null;
                 }
             }
@@ -62,6 +64,11 @@ const api = {
             return data;
         } catch (error) {
             console.error(`API Error on ${endpoint}:`, error);
+            if (!error.status && (error.name === 'TypeError' || (error.message && error.message.toLowerCase().includes('fetch')))) {
+                const connError = new Error('Unable to connect to backend server. Please make sure the backend is running (double-click start-backend.bat).');
+                connError.isConnectionError = true;
+                throw connError;
+            }
             throw error;
         }
     },

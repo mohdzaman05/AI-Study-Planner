@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Registration - AI Study Planner</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <script>
+        const savedTheme = localStorage.getItem('study_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body style="background-color: var(--bg-main); display: flex; flex-direction: column; min-height: 100vh;">
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
     <!-- Navigation -->
     <header class="navbar" id="navbar"></header>
 
@@ -18,7 +22,7 @@
                 <p style="color: var(--text-muted); font-size: 0.875rem;">Set up your personal study environment and generate AI plans</p>
             </div>
 
-            <div id="errorAlert" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: var(--danger-bg); border: 1px solid #fca5a5; color: var(--danger-text); font-size: 0.875rem; margin-bottom: 1.25rem;"></div>
+            <div id="errorAlert" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: var(--danger-bg); border: 1px solid var(--danger); color: var(--danger-text); font-size: 0.875rem; margin-bottom: 1.25rem;"></div>
 
             <form id="registerForm">
                 <div class="form-group">
@@ -49,7 +53,7 @@
             </form>
 
             <div style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted);">
-                Already have an account? <a href="/login.html" style="font-weight: 600;">Log in here</a>
+                Already have an account? <a href="login.html" style="font-weight: 600;">Log in here</a>
             </div>
         </div>
     </main>
@@ -58,9 +62,9 @@
     <footer class="footer" id="footer"></footer>
 
     <!-- Scripts -->
-    <script src="/js/api.js"></script>
-    <script src="/js/auth.js"></script>
-    <script src="/js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Guard: If already logged in, redirect to dashboard
@@ -124,7 +128,7 @@
                     ui.showToast('Account registered successfully! Welcome to AI Study Planner.', 'success');
 
                     setTimeout(() => {
-                        window.location.href = '/dashboard.html';
+                        window.location.href = 'dashboard.html';
                     }, 500);
                 } catch (error) {
                     errorAlert.textContent = error.message || 'Registration failed. An account with this email may already exist.';

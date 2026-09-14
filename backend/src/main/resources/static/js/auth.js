@@ -44,7 +44,7 @@ const auth = {
     logout() {
         localStorage.removeItem(this.TOKEN_KEY);
         localStorage.removeItem(this.USER_KEY);
-        window.location.href = '/login.html';
+        window.location.href = 'login.html';
     },
 
     /**
@@ -55,9 +55,9 @@ const auth = {
     guard(requiresAuth = true) {
         const authed = this.isAuthenticated();
         if (requiresAuth && !authed) {
-            window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
         } else if (!requiresAuth && authed) {
-            window.location.href = '/dashboard.html';
+            window.location.href = 'dashboard.html';
         }
     }
 };

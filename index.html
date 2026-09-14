@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Study Planner - Loading...</title>
-    <meta http-equiv="refresh" content="0; url=frontend/index.html">
+    <meta http-equiv="refresh" content="0; url=http://localhost:8080/">
     <style>
         :root,
         [data-theme="dark"] {
@@ -49,8 +49,10 @@
         // Apply saved theme
         const savedTheme = localStorage.getItem('study_theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
-        // Instant redirect
-        window.location.replace("frontend/index.html");
+        // Instant redirect to unified application on :8080
+        if (window.location.port !== '8080') {
+            window.location.replace("http://localhost:8080/");
+        }
     </script>
 </head>
 
@@ -58,8 +60,7 @@
     <div class="loading-box">
         <div class="spinner"></div>
         <h2>Opening AI Study Planner...</h2>
-        <p>If you are not redirected automatically, <a href="frontend/index.html" style="color: #6366f1;">click
-                here</a>.</p>
+        <p>Connecting to <a href="http://localhost:8080/" style="color: #6366f1;">http://localhost:8080/</a>...</p>
     </div>
 </body>
 
